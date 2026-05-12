@@ -113,7 +113,105 @@ Para conectar con datos reales, crear un Google Sheet con estas **5 hojas**:
 - Google Fonts (Inter)
 - Google Sheets API (vía Apps Script)
 
-## 📌 Notas
+## � Mapeo Google Sheets → SQL
+
+Referencia para la futura migración a base de datos relacional.
+
+### Correspondencia de hojas y tablas
+
+| Hoja (Sheet) | Tabla SQL | Descripción |
+|-------------|-----------|-------------|
+| `Configuracion` | `configuracion` | Parámetros del sistema |
+| `Vehiculos` | `vehiculos` | Registro maestro de vehículos |
+| `Movimientos` | `movimientos` | Log de entradas y salidas |
+| `Estadisticas` | `estadisticas_diarias` | Resumen consolidado por día |
+| `Usuarios` | `usuarios` | Cuentas de acceso al sistema |
+
+### SQL: `configuracion`
+```sql
+CREATE TABLE configuracion (
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    campo           VARCHAR(50) UNIQUE NOT NULL,    -- Sheet col: campo
+    valor           VARCHAR(255)                     -- Sheet col: valor
+);
+-- Ejemplo: ('capacidad_total', '30'), ('tarifa_hora', '500')
+```
+
+### SQL: `vehiculos`
+```sql
+CREATE TABLE vehiculos (
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    patente         VARCHAR(10) UNIQUE NOT NULL,     -- Sheet col: patente
+    titular         VARCHAR(100),                     -- Sheet col: titular
+    tipo            VARCHAR(20) DEFAULT 'Auto',      -- Sheet col: tipo (Auto/Camioneta/Moto)
+    habilitado      BOOLEAN DEFAULT TRUE,            -- Sheet col: habilitado (SI/NO → true/false)
+    abonado         BOOLEAN DEFAULT FALSE,           -- Sheet col: abonado (SI/NO → true/false)
+    deuda           DECIMAL(10,2) DEFAULT 0.00,      -- Sheet col: deuda
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+### SQL: `movimientos`
+```sql
+CREATE TABLE movimientos (
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    patente         VARCHAR(10) NOT NULL,            -- Sheet col: patente
+    fecha           DATE NOT NULL,                    -- Sheet col: fecha (texto → DATE)
+    hora            TIME NOT NULL,                    -- Sheet col: hora (texto → TIME)
+    tipo            ENUM('Entrada','Salida') NOT NULL,-- Sheet col: tipo
+    monto           DECIMAL(10,2) DEFAULT 0.00,      -- Sheet col: monto
+    operador        VARCHAR(50) DEFAULT 'Sistema',   -- Sheet col: operador
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patente) REFERENCES vehiculos(patente)
+);
+-- Índices recomendados:
+CREATE INDEX idx_mov_patente ON movimientos(patente);
+CREATE INDEX idx_mov_fecha ON movimientos(fecha);
+CREATE INDEX idx_mov_tipo ON movimientos(tipo);
+```
+
+### SQL: `estadisticas_diarias`
+```sql
+CREATE TABLE estadisticas_diarias (
+    id                INT PRIMARY KEY AUTO_INCREMENT,
+    fecha             DATE UNIQUE NOT NULL,           -- Sheet col: fecha
+    ingresos_dia      INT DEFAULT 0,                  -- Sheet col: ingresos_dia
+    recaudacion_dia   DECIMAL(12,2) DEFAULT 0.00,     -- Sheet col: recaudacion_dia
+    ocupacion_max     INT DEFAULT 0,                   -- Sheet col: ocupacion_max
+    hora_pico_inicio  TIME,                            -- Sheet col: hora_pico_inicio
+    hora_pico_fin     TIME,                            -- Sheet col: hora_pico_fin
+    ingresos_mes      INT DEFAULT 0,                   -- Sheet col: ingresos_mes
+    promedio_diario   INT DEFAULT 0                    -- Sheet col: promedio_diario
+);
+```
+
+### SQL: `usuarios`
+```sql
+CREATE TABLE usuarios (
+    id              INT PRIMARY KEY AUTO_INCREMENT,
+    usuario         VARCHAR(50) UNIQUE NOT NULL,      -- Sheet col: usuario
+    password_hash   VARCHAR(255) NOT NULL,            -- Sheet col: password → bcrypt hash
+    nombre          VARCHAR(100),                      -- Sheet col: nombre
+    rol             ENUM('admin','operador','visor')   -- Sheet col: rol
+                    NOT NULL DEFAULT 'visor',
+    activo          BOOLEAN DEFAULT TRUE,              -- Sheet col: activo (SI/NO → true/false)
+    ultimo_login    TIMESTAMP NULL,                    -- (nuevo) no existe en Sheet
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Notas de migración
+| Aspecto | Sheet (actual) | SQL (futuro) |
+|---------|---------------|--------------|
+| Contraseñas | Texto plano | `bcrypt` hash |
+| Validación de login | Client-side (JS) | Server-side (API) |
+| Tipos de dato | Todo texto | Tipado estricto (DATE, DECIMAL, ENUM) |
+| Relaciones | Sin relaciones | FK `movimientos.patente → vehiculos.patente` |
+| Campos nuevos | — | `created_at`, `updated_at`, `ultimo_login` |
+| Permisos | Tabla en `auth.js` | Tabla `roles_permisos` (normalizable) |
+
+## �📌 Notas
 - La autenticación actual es **client-side** (mock data). Cuando se conecte la BBDD SQL, la validación se hará server-side.
 - Las contraseñas en el Excel/Sheet son provisorias. En la versión con BBDD se usará hashing seguro.
 - El sistema de permisos usa atributos HTML (`data-permission`, `data-role`) para ocultar/mostrar elementos según el rol del usuario logueado.
