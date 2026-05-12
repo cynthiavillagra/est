@@ -1,14 +1,43 @@
 # 🅿️ ParkControl - Sistema de Gestión de Estacionamiento
 
 ## 📋 Descripción
-Dashboard de gestión de estacionamiento inteligente con lectura de patentes, control de ocupación en tiempo real, gestión de deudas y estadísticas.
+Dashboard de gestión de estacionamiento inteligente con lectura de patentes, control de ocupación en tiempo real, gestión de deudas, estadísticas y **sistema de login con roles y permisos**.
 
 ## 🚀 Ejecución Rápida
-Simplemente abrir `index.html` en un navegador. Los datos de demostración se cargan automáticamente.
+1. Abrir `login.html` en un navegador
+2. Iniciar sesión con uno de los usuarios de demostración
+3. Los datos de demo se cargan automáticamente
 
-## 📊 Estructura de Google Sheets
+## 🔐 Sistema de Login y Permisos
 
-Para conectar con datos reales, crear un Google Sheet con estas **4 hojas**:
+### Usuarios de demostración
+
+| Usuario | Contraseña | Rol | Descripción |
+|---------|------------|-----|-------------|
+| `admin` | `admin123` | Admin | Acceso total al sistema |
+| `operador` | `oper123` | Operador | Operaciones diarias |
+| `visor` | `visor123` | Visor | Solo consulta |
+
+### Roles y permisos detallados
+
+| Permiso | Admin | Operador | Visor |
+|---------|:-----:|:--------:|:-----:|
+| Ver dashboard | ✅ | ✅ | ✅ |
+| Ver estadísticas | ✅ | ✅ | ✅ |
+| Abrir barrera | ✅ | ✅ | ❌ |
+| Ver historial | ✅ | ✅ | ❌ |
+| Ver vehículos | ✅ | ✅ | ❌ |
+| Gestionar vehículos | ✅ | ❌ | ❌ |
+| Ver deudas | ✅ | ✅ | ❌ |
+| Cobrar deudas | ✅ | ❌ | ❌ |
+| Ver reportes | ✅ | ❌ | ❌ |
+| Ver/gestionar abonados | ✅ | ✅/❌ | ❌ |
+| Configuración | ✅ | ❌ | ❌ |
+| Gestionar usuarios | ✅ | ❌ | ❌ |
+
+## 📊 Estructura de Google Sheets / Excel
+
+Para conectar con datos reales, crear un Google Sheet con estas **5 hojas**:
 
 ### Hoja 1: `Configuracion`
 | campo | valor |
@@ -36,6 +65,15 @@ Para conectar con datos reales, crear un Google Sheet con estas **4 hojas**:
 |-------|--------------|-----------------|---------------|------------------|---------------|--------------|-----------------|
 | 2026-05-08 | 87 | 48750 | 25 | 17:00 | 19:00 | 1245 | 62 |
 
+### Hoja 5: `Usuarios`
+| usuario | password | nombre | rol | activo |
+|---------|----------|--------|-----|--------|
+| admin | admin123 | Administrador | admin | SI |
+| operador | oper123 | Juan Operador | operador | SI |
+| visor | visor123 | María Consulta | visor | SI |
+
+> **Roles válidos:** `admin`, `operador`, `visor`
+
 ## 🔗 Conectar Google Sheets
 
 1. Crear el Google Sheet con la estructura de arriba
@@ -54,7 +92,10 @@ Para conectar con datos reales, crear un Google Sheet con estas **4 hojas**:
 ## 📁 Estructura del Proyecto
 ```
 2026-estacionamiento/
-├── index.html              # Página principal
+├── login.html              # Página de inicio de sesión
+├── login.css               # Estilos del login
+├── auth.js                 # Autenticación y permisos
+├── index.html              # Dashboard principal (protegido)
 ├── styles.css              # Estilos del dashboard
 ├── data.js                 # Capa de datos + mock data
 ├── app.js                  # Lógica de la aplicación
@@ -71,3 +112,8 @@ Para conectar con datos reales, crear un Google Sheet con estas **4 hojas**:
 - Font Awesome (iconos)
 - Google Fonts (Inter)
 - Google Sheets API (vía Apps Script)
+
+## 📌 Notas
+- La autenticación actual es **client-side** (mock data). Cuando se conecte la BBDD SQL, la validación se hará server-side.
+- Las contraseñas en el Excel/Sheet son provisorias. En la versión con BBDD se usará hashing seguro.
+- El sistema de permisos usa atributos HTML (`data-permission`, `data-role`) para ocultar/mostrar elementos según el rol del usuario logueado.
