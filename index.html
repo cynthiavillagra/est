@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de gestión de estacionamiento inteligente - Panel de control en tiempo real">
+    <title>ParkControl - Panel Principal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ==================== TOP BAR ==================== -->
+    <header class="top-bar" id="topBar">
+        <div class="top-bar__left">
+            <button class="hamburger-btn" id="menuToggle" aria-label="Menú">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="top-bar__title">Panel Principal</h1>
+        </div>
+        <div class="top-bar__center">
+            <div class="top-bar__quick-stats" id="quickStats">
+                <div class="quick-stat" data-tooltip="Lugares Totales">
+                    <i class="fas fa-car"></i>
+                    <span id="qsTotales">30</span>
+                </div>
+                <div class="quick-stat" data-tooltip="Lugares Libres">
+                    <i class="fas fa-parking"></i>
+                    <span id="qsLibres">12</span>
+                </div>
+                <div class="quick-stat" data-tooltip="Ocupados">
+                    <i class="fas fa-car-side"></i>
+                    <span id="qsOcupados">18</span>
+                </div>
+                <div class="quick-stat" data-tooltip="Recaudación">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span id="qsRecaudacion">48.750</span>
+                </div>
+            </div>
+        </div>
+        <div class="top-bar__right">
+            <div class="top-bar__clock" id="clock">
+                <i class="far fa-clock"></i>
+                <div class="clock-text">
+                    <span id="clockTime">10:42:31</span>
+                    <span id="clockDate" class="clock-date">8 de Mayo, 2026</span>
+                </div>
+            </div>
+            <div class="top-bar__user" id="userInfo">
+                <div class="user-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <span class="user-name">Administrador</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== SIDEBAR (Mobile) ==================== -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar__header">
+            <span class="sidebar__logo">🅿️ ParkControl</span>
+            <button class="sidebar__close" id="sidebarClose"><i class="fas fa-times"></i></button>
+        </div>
+        <ul class="sidebar__menu">
+            <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i> Panel Principal</a></li>
+            <li><a href="#"><i class="fas fa-car"></i> Vehículos</a></li>
+            <li><a href="#"><i class="fas fa-history"></i> Historial</a></li>
+            <li><a href="#"><i class="fas fa-chart-bar"></i> Reportes</a></li>
+            <li><a href="#"><i class="fas fa-users"></i> Abonados</a></li>
+            <li><a href="#"><i class="fas fa-money-bill-wave"></i> Deudas</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="dashboard" id="dashboard">
+        
+        <!-- ====== SUMMARY CARDS ====== -->
+        <section class="summary-cards" id="summaryCards">
+            <div class="card card--total" id="cardTotal">
+                <div class="card__icon">
+                    <i class="fas fa-warehouse"></i>
+                </div>
+                <div class="card__content">
+                    <span class="card__label">LUGARES TOTALES</span>
+                    <span class="card__value" id="totalPlaces">30</span>
+                    <span class="card__sub">Capacidad total</span>
+                </div>
+            </div>
+            <div class="card card--free" id="cardFree">
+                <div class="card__icon">
+                    <i class="fas fa-car-alt"></i>
+                </div>
+                <div class="card__content">
+                    <span class="card__label">LUGARES LIBRES</span>
+                    <span class="card__value" id="freePlaces">12</span>
+                    <span class="card__sub" id="freePercent">40% disponible</span>
+                </div>
+            </div>
+            <div class="card card--occupied" id="cardOccupied">
+                <div class="card__icon">
+                    <i class="fas fa-car-side"></i>
+                </div>
+                <div class="card__content">
+                    <span class="card__label">OCUPADOS</span>
+                    <span class="card__value" id="occupiedPlaces">18</span>
+                    <span class="card__sub" id="occupiedPercent">60% ocupados</span>
+                </div>
+            </div>
+            <div class="card card--revenue" id="cardRevenue">
+                <div class="card__icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <div class="card__content">
+                    <span class="card__label">RECAUDACIÓN HOY</span>
+                    <span class="card__value" id="todayRevenue">$ 48.750</span>
+                    <span class="card__sub">Total del día</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== MIDDLE SECTION: PLATE READER + OCCUPATION ====== -->
+        <section class="middle-section" id="middleSection">
+            <!-- PLATE READER -->
+            <div class="panel plate-reader" id="plateReader">
+                <div class="panel__header">
+                    <h2 class="panel__title">LECTURA EN VIVO - LECTOR DE PATENTES</h2>
+                    <div class="live-badge">
+                        <span class="live-dot"></span> EN VIVO
+                    </div>
+                </div>
+                <div class="plate-reader__body">
+                    <div class="plate-reader__camera">
+                        <img src="assets/img/car_plate_sample.png" alt="Cámara en vivo" id="cameraFeed" class="camera-img">
+                        <div class="camera-overlay">
+                            <div class="scan-line"></div>
+                        </div>
+                    </div>
+                    <div class="plate-reader__info">
+                        <div class="plate-info-group">
+                            <label>PATENTE DETECTADA</label>
+                            <div class="plate-number" id="detectedPlate">AA 123 BB</div>
+                        </div>
+                        <div class="plate-info-group">
+                            <label>CONFIDENCIA: <strong id="confidence">96%</strong></label>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="confidenceFill" style="width: 96%"></div>
+                            </div>
+                        </div>
+                        <div class="plate-info-group">
+                            <label>Estado del Vehículo</label>
+                            <div class="vehicle-status status--ok" id="vehicleStatus">
+                                <i class="fas fa-check-circle"></i>
+                                <div>
+                                    <strong>HABILITADO</strong>
+                                    <span>Puede ingresar</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="plate-info-group">
+                            <label>DEUDA</label>
+                            <div class="debt-display" id="debtDisplay">
+                                <span class="debt-amount">$ 0</span>
+                            </div>
+                        </div>
+                        <button class="btn btn--barrier" id="btnBarrier">
+                            <i class="fas fa-dungeon"></i> ABRIR BARRERA
+                        </button>
+                        <div class="last-detection" id="lastDetection">
+                            Última detección: 10:42:28 - AA123BB
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OCCUPATION SECTION -->
+            <div class="occupation-section" id="occupationSection">
+                <!-- DONUT CHART -->
+                <div class="panel occupation-realtime" id="occupationRealtime">
+                    <h2 class="panel__title">OCUPACIÓN EN TIEMPO REAL</h2>
+                    <div class="donut-container">
+                        <div class="donut-chart" id="donutChart">
+                            <svg viewBox="0 0 200 200" class="donut-svg">
+                                <circle cx="100" cy="100" r="80" class="donut-bg"/>
+                                <circle cx="100" cy="100" r="80" class="donut-fill" id="donutFill"
+                                    stroke-dasharray="502.65" stroke-dashoffset="201.06"/>
+                            </svg>
+                            <div class="donut-center">
+                                <span class="donut-percent" id="donutPercent">60%</span>
+                                <span class="donut-label">Ocupación</span>
+                            </div>
+                        </div>
+                        <div class="donut-legend">
+                            <div class="legend-item">
+                                <span class="legend-dot legend-dot--occupied"></span>
+                                <span>Ocupados</span>
+                                <strong id="legendOccupied">18 (60%)</strong>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-dot legend-dot--free"></span>
+                                <span>Libres</span>
+                                <strong id="legendFree">12 (40%)</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 24H CHART -->
+                <div class="panel occupation-chart" id="occupationChart">
+                    <h2 class="panel__title">OCUPACIÓN - ÚLTIMAS 24 HORAS</h2>
+                    <div class="chart-container" id="chartContainer">
+                        <canvas id="occupation24hCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== TABLES SECTION ====== -->
+        <section class="tables-section" id="tablesSection">
+            <!-- ÚLTIMOS INGRESOS -->
+            <div class="panel table-panel" id="lastEntriesPanel">
+                <h2 class="panel__title">ÚLTIMOS INGRESOS</h2>
+                <div class="table-wrapper">
+                    <table class="data-table" id="lastEntriesTable">
+                        <thead>
+                            <tr>
+                                <th>PATENTE</th>
+                                <th>FECHA</th>
+                                <th>HORA</th>
+                                <th>TIPO</th>
+                                <th>ESTADO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lastEntriesBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn--link" id="btnHistorial">
+                    <i class="fas fa-history"></i> VER HISTORIAL COMPLETO
+                </button>
+            </div>
+
+            <!-- TOP VEHÍCULOS -->
+            <div class="panel table-panel" id="topVehiclesPanel">
+                <h2 class="panel__title">TOP VEHÍCULOS (MÁS INGRESOS)</h2>
+                <div class="table-wrapper">
+                    <table class="data-table" id="topVehiclesTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>PATENTE</th>
+                                <th>INGRESOS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topVehiclesBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn--primary btn--full" id="btnAllVehicles">
+                    <i class="fas fa-car"></i> VER TODOS LOS VEHÍCULOS
+                </button>
+            </div>
+
+            <!-- DEUDORES -->
+            <div class="panel table-panel" id="debtorsPanel">
+                <div class="panel__header-row">
+                    <h2 class="panel__title">DEUDORES</h2>
+                    <button class="btn btn--text" id="btnViewAllDebtors">VER TODOS</button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="debtorsTable">
+                        <thead>
+                            <tr>
+                                <th>PATENTE</th>
+                                <th>DEUDA</th>
+                                <th>ÚLTIMO INGRESO</th>
+                            </tr>
+                        </thead>
+                        <tbody id="debtorsBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <button class="btn btn--danger btn--full" id="btnCollectDebt">
+                    <i class="fas fa-hand-holding-usd"></i> COBRAR DEUDA
+                </button>
+            </div>
+        </section>
+
+        <!-- ====== FOOTER STATS BAR ====== -->
+        <footer class="footer-stats" id="footerStats">
+            <div class="footer-stat" id="footerIngresos">
+                <div class="footer-stat__icon"><i class="fas fa-car"></i></div>
+                <div class="footer-stat__content">
+                    <span class="footer-stat__label">INGRESOS HOY</span>
+                    <span class="footer-stat__value" id="footerIngresosVal">87</span>
+                </div>
+            </div>
+            <div class="footer-stat" id="footerRecaudacion">
+                <div class="footer-stat__icon"><i class="fas fa-dollar-sign"></i></div>
+                <div class="footer-stat__content">
+                    <span class="footer-stat__label">RECAUDACIÓN HOY</span>
+                    <span class="footer-stat__value" id="footerRecaudacionVal">$ 48.750</span>
+                </div>
+            </div>
+            <div class="footer-stat" id="footerIngresosMes">
+                <div class="footer-stat__icon"><i class="fas fa-calendar-alt"></i></div>
+                <div class="footer-stat__content">
+                    <span class="footer-stat__label">INGRESOS ESTE MES</span>
+                    <span class="footer-stat__value" id="footerIngresosMesVal">1.245</span>
+                </div>
+            </div>
+            <div class="footer-stat" id="footerPromedio">
+                <div class="footer-stat__icon"><i class="fas fa-clipboard-list"></i></div>
+                <div class="footer-stat__content">
+                    <span class="footer-stat__label">PROMEDIO DIARIO</span>
+                    <span class="footer-stat__value" id="footerPromedioVal">62</span>
+                </div>
+            </div>
+            <div class="footer-stat" id="footerPico">
+                <div class="footer-stat__icon"><i class="fas fa-clock"></i></div>
+                <div class="footer-stat__content">
+                    <span class="footer-stat__label">HORARIO PICO HOY</span>
+                    <span class="footer-stat__value" id="footerPicoVal">17:00 - 19:00</span>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
