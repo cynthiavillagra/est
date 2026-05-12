@@ -18,12 +18,76 @@ const APP = {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Auth guard - redirect to login if not authenticated
+    if (!AuthService.requireAuth()) return;
+
+    initUserProfile();
     initClock();
     initSidebar();
+    initUserDropdown();
     initEventListeners();
     await loadDashboard();
+    AuthService.applyPermissions();
     startAutoRefresh();
 });
+
+// ============================================
+// USER PROFILE & AUTH UI
+// ============================================
+
+function initUserProfile() {
+    const session = AuthService.getSession();
+    if (!session) return;
+
+    // Update top bar user info
+    const userName = document.getElementById('userName');
+    const userRoleBadge = document.getElementById('userRoleBadge');
+    const dropdownUserName = document.getElementById('dropdownUserName');
+    const dropdownUserRole = document.getElementById('dropdownUserRole');
+
+    if (userName) userName.textContent = session.nombre;
+    if (userRoleBadge) {
+        userRoleBadge.textContent = session.rolLabel;
+        userRoleBadge.style.background = `${session.rolColor}22`;
+        userRoleBadge.style.color = session.rolColor;
+        userRoleBadge.style.borderColor = `${session.rolColor}44`;
+    }
+    if (dropdownUserName) dropdownUserName.textContent = session.nombre;
+    if (dropdownUserRole) dropdownUserRole.textContent = session.rolLabel;
+}
+
+function initUserDropdown() {
+    const userInfo = document.getElementById('userInfo');
+    const btnLogout = document.getElementById('btnLogout');
+    const sidebarLogout = document.getElementById('sidebarLogout');
+
+    // Toggle dropdown
+    userInfo?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userInfo.classList.toggle('open');
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+        userInfo?.classList.remove('open');
+    });
+
+    // Prevent dropdown close when clicking inside it
+    document.getElementById('userDropdown')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    // Logout buttons
+    btnLogout?.addEventListener('click', (e) => {
+        e.preventDefault();
+        AuthService.logout();
+    });
+
+    sidebarLogout?.addEventListener('click', (e) => {
+        e.preventDefault();
+        AuthService.logout();
+    });
+}
 
 // ============================================
 // LOAD DASHBOARD DATA
@@ -115,35 +179,58 @@ function toggleSidebar(open) {
 // ============================================
 
 function initEventListeners() {
-    // Barrier button
+    // Barrier button (with permission check)
     document.getElementById('btnBarrier')?.addEventListener('click', () => {
+        if (!AuthService.hasPermission('abrir_barrera')) {
+            showToast('error', 'No tenés permisos para abrir la barrera');
+            return;
+        }
         showToast('success', 'Barrera abierta correctamente');
         animateBarrierButton();
     });
 
     // History button
     document.getElementById('btnHistorial')?.addEventListener('click', () => {
+        if (!AuthService.hasPermission('ver_historial')) {
+            showToast('error', 'No tenés permisos para ver el historial');
+            return;
+        }
         showToast('success', 'Historial completo - Próximamente');
     });
 
     // All vehicles button
     document.getElementById('btnAllVehicles')?.addEventListener('click', () => {
+        if (!AuthService.hasPermission('ver_vehiculos')) {
+            showToast('error', 'No tenés permisos para ver vehículos');
+            return;
+        }
         showToast('success', 'Lista de vehículos - Próximamente');
     });
 
     // View all debtors
     document.getElementById('btnViewAllDebtors')?.addEventListener('click', () => {
+        if (!AuthService.hasPermission('ver_deudas')) {
+            showToast('error', 'No tenés permisos para ver deudores');
+            return;
+        }
         showToast('success', 'Todos los deudores - Próximamente');
     });
 
     // Collect debt
     document.getElementById('btnCollectDebt')?.addEventListener('click', () => {
+        if (!AuthService.hasPermission('cobrar_deudas')) {
+            showToast('error', 'No tenés permisos para cobrar deudas');
+            return;
+        }
         showToast('success', 'Módulo de cobro - Próximamente');
     });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') toggleSidebar(false);
+        if (e.key === 'Escape') {
+            toggleSidebar(false);
+            document.getElementById('userInfo')?.classList.remove('open');
+        }
     });
 }
 

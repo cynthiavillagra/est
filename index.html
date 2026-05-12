@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sistema de gestión de estacionamiento inteligente - Panel de control en tiempo real">
+    <meta name="description"
+        content="Sistema de gestión de estacionamiento inteligente - Panel de control en tiempo real">
     <title>ParkControl - Panel Principal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <!-- ==================== TOP BAR ==================== -->
     <header class="top-bar" id="topBar">
@@ -52,7 +56,32 @@
                 <div class="user-avatar">
                     <i class="fas fa-user-shield"></i>
                 </div>
-                <span class="user-name">Administrador</span>
+                <div class="user-info-text">
+                    <span class="user-name" id="userName">Administrador</span>
+                    <span class="user-role-badge" id="userRoleBadge">Admin</span>
+                </div>
+                <i class="fas fa-chevron-down user-chevron"></i>
+                <!-- User dropdown -->
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown__header">
+                        <div class="user-dropdown__avatar"><i class="fas fa-user-shield"></i></div>
+                        <div>
+                            <strong id="dropdownUserName">Administrador</strong>
+                            <span class="user-dropdown__role" id="dropdownUserRole">Admin</span>
+                        </div>
+                    </div>
+                    <div class="user-dropdown__divider"></div>
+                    <a href="#" class="user-dropdown__item" data-role="admin">
+                        <i class="fas fa-users-cog"></i> Gestionar Usuarios
+                    </a>
+                    <a href="#" class="user-dropdown__item" data-role="admin">
+                        <i class="fas fa-cog"></i> Configuración
+                    </a>
+                    <div class="user-dropdown__divider"></div>
+                    <a href="#" class="user-dropdown__item user-dropdown__logout" id="btnLogout">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </a>
+                </div>
             </div>
         </div>
     </header>
@@ -64,20 +93,24 @@
             <button class="sidebar__close" id="sidebarClose"><i class="fas fa-times"></i></button>
         </div>
         <ul class="sidebar__menu">
-            <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i> Panel Principal</a></li>
-            <li><a href="#"><i class="fas fa-car"></i> Vehículos</a></li>
-            <li><a href="#"><i class="fas fa-history"></i> Historial</a></li>
-            <li><a href="#"><i class="fas fa-chart-bar"></i> Reportes</a></li>
-            <li><a href="#"><i class="fas fa-users"></i> Abonados</a></li>
-            <li><a href="#"><i class="fas fa-money-bill-wave"></i> Deudas</a></li>
-            <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li>
+            <li class="active"><a href="#" data-permission="ver_dashboard"><i class="fas fa-tachometer-alt"></i> Panel
+                    Principal</a></li>
+            <li><a href="#" data-permission="ver_vehiculos"><i class="fas fa-car"></i> Vehículos</a></li>
+            <li><a href="#" data-permission="ver_historial"><i class="fas fa-history"></i> Historial</a></li>
+            <li><a href="#" data-permission="ver_reportes"><i class="fas fa-chart-bar"></i> Reportes</a></li>
+            <li><a href="#" data-permission="ver_abonados"><i class="fas fa-users"></i> Abonados</a></li>
+            <li><a href="#" data-permission="ver_deudas"><i class="fas fa-money-bill-wave"></i> Deudas</a></li>
+            <li><a href="#" data-permission="ver_configuracion"><i class="fas fa-cog"></i> Configuración</a></li>
+            <li class="sidebar__menu-divider"></li>
+            <li><a href="#" id="sidebarLogout" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Cerrar
+                    Sesión</a></li>
         </ul>
     </nav>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- ==================== MAIN CONTENT ==================== -->
     <main class="dashboard" id="dashboard">
-        
+
         <!-- ====== SUMMARY CARDS ====== -->
         <section class="summary-cards" id="summaryCards">
             <div class="card card--total" id="cardTotal">
@@ -110,7 +143,7 @@
                     <span class="card__sub" id="occupiedPercent">60% ocupados</span>
                 </div>
             </div>
-            <div class="card card--revenue" id="cardRevenue">
+            <div class="card card--revenue" id="cardRevenue" data-permission="ver_estadisticas">
                 <div class="card__icon">
                     <i class="fas fa-dollar-sign"></i>
                 </div>
@@ -134,7 +167,8 @@
                 </div>
                 <div class="plate-reader__body">
                     <div class="plate-reader__camera">
-                        <img src="assets/img/car_plate_sample.png" alt="Cámara en vivo" id="cameraFeed" class="camera-img">
+                        <img src="assets/img/car_plate_sample.png" alt="Cámara en vivo" id="cameraFeed"
+                            class="camera-img">
                         <div class="camera-overlay">
                             <div class="scan-line"></div>
                         </div>
@@ -166,7 +200,7 @@
                                 <span class="debt-amount">$ 0</span>
                             </div>
                         </div>
-                        <button class="btn btn--barrier" id="btnBarrier">
+                        <button class="btn btn--barrier" id="btnBarrier" data-permission="abrir_barrera">
                             <i class="fas fa-dungeon"></i> ABRIR BARRERA
                         </button>
                         <div class="last-detection" id="lastDetection">
@@ -184,9 +218,9 @@
                     <div class="donut-container">
                         <div class="donut-chart" id="donutChart">
                             <svg viewBox="0 0 200 200" class="donut-svg">
-                                <circle cx="100" cy="100" r="80" class="donut-bg"/>
+                                <circle cx="100" cy="100" r="80" class="donut-bg" />
                                 <circle cx="100" cy="100" r="80" class="donut-fill" id="donutFill"
-                                    stroke-dasharray="502.65" stroke-dashoffset="201.06"/>
+                                    stroke-dasharray="502.65" stroke-dashoffset="201.06" />
                             </svg>
                             <div class="donut-center">
                                 <span class="donut-percent" id="donutPercent">60%</span>
@@ -239,7 +273,7 @@
                         </tbody>
                     </table>
                 </div>
-                <button class="btn btn--link" id="btnHistorial">
+                <button class="btn btn--link" id="btnHistorial" data-permission="ver_historial">
                     <i class="fas fa-history"></i> VER HISTORIAL COMPLETO
                 </button>
             </div>
@@ -261,16 +295,16 @@
                         </tbody>
                     </table>
                 </div>
-                <button class="btn btn--primary btn--full" id="btnAllVehicles">
+                <button class="btn btn--primary btn--full" id="btnAllVehicles" data-permission="ver_vehiculos">
                     <i class="fas fa-car"></i> VER TODOS LOS VEHÍCULOS
                 </button>
             </div>
 
             <!-- DEUDORES -->
-            <div class="panel table-panel" id="debtorsPanel">
+            <div class="panel table-panel" id="debtorsPanel" data-permission="ver_deudas">
                 <div class="panel__header-row">
                     <h2 class="panel__title">DEUDORES</h2>
-                    <button class="btn btn--text" id="btnViewAllDebtors">VER TODOS</button>
+                    <button class="btn btn--text" id="btnViewAllDebtors" data-permission="ver_deudas">VER TODOS</button>
                 </div>
                 <div class="table-wrapper">
                     <table class="data-table" id="debtorsTable">
@@ -286,7 +320,7 @@
                         </tbody>
                     </table>
                 </div>
-                <button class="btn btn--danger btn--full" id="btnCollectDebt">
+                <button class="btn btn--danger btn--full" id="btnCollectDebt" data-permission="cobrar_deudas">
                     <i class="fas fa-hand-holding-usd"></i> COBRAR DEUDA
                 </button>
             </div>
@@ -334,7 +368,9 @@
 
     <!-- ==================== SCRIPTS ==================== -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="auth.js"></script>
     <script src="data.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>
