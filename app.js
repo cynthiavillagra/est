@@ -179,7 +179,7 @@ function toggleSidebar(open) {
 // ============================================
 
 function initEventListeners() {
-    // Barrier button (with permission check + write to Sheet)
+    // Barrier button (with permission check + write to Sheet via GET)
     document.getElementById('btnBarrier')?.addEventListener('click', async () => {
         if (!AuthService.hasPermission('abrir_barrera')) {
             showToast('error', 'No tenés permisos para abrir la barrera');
@@ -192,9 +192,6 @@ function initEventListeners() {
             return;
         }
 
-        // Determinar si es Entrada o Salida
-        const estaDentro = dataService.estaDentro(patente);
-        const tipo = estaDentro ? 'Salida' : 'Entrada';
         const operador = AuthService.getUserName();
 
         // Deshabilitar botón mientras procesa
@@ -203,24 +200,33 @@ function initEventListeners() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> REGISTRANDO...';
 
         try {
-            const result = await dataService.registrarMovimiento(patente, tipo, 0, operador);
+            // El servidor decide si es Entrada o Salida y calcula el monto
+            const result = await dataService.abrirBarrera(patente, operador);
 
             if (result.success) {
-                showToast('success', `✅ ${tipo} registrada: ${patente}`);
+                const tipo = result.tipo || 'Entrada';
+                let msg = result.message;
+
+                // Si es salida, mostrar info de cobro
+                if (tipo === 'Salida' && result.tiempoTexto) {
+                    msg += ` (${result.tiempoTexto})`;
+                }
+
+                showToast('success', msg);
                 animateBarrierButton(tipo);
 
-                // Refrescar datos del dashboard
+                // Refrescar dashboard después de la animación
                 setTimeout(async () => {
                     await loadDashboard();
-                }, 1500);
+                }, 2000);
             } else {
-                showToast('error', result.message || 'Error al registrar movimiento');
+                showToast('error', result.message || result.error || 'Error al registrar');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-dungeon"></i> ABRIR BARRERA';
             }
         } catch (error) {
             console.error('Error en barrera:', error);
-            showToast('error', 'Error de conexión al registrar');
+            showToast('error', 'Error de conexión');
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-dungeon"></i> ABRIR BARRERA';
         }

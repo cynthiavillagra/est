@@ -2,43 +2,11 @@
    DATA.JS - Data Layer & Google Sheets Integration
    ============================================
    
-   ESTRUCTURA DE GOOGLE SHEETS REQUERIDA:
-   
-   Sheet 1: "Configuracion"
-   | campo            | valor |
-   |------------------|-------|
-   | capacidad_total  | 30    |
-   | tarifa_hora      | 500   |
-   | tarifa_fraccion   | 250   |
-   | nombre_parking   | ParkControl Central |
-   | direccion        | Av. Corrientes 1234 |
-   
-   Sheet 2: "Vehiculos"
-   | patente  | titular         | tipo     | habilitado | abonado | deuda  |
-   |----------|-----------------|----------|------------|---------|--------|
-   | AA123BB  | Juan Pérez      | Auto     | SI         | SI      | 0      |
-   | AC456DF  | María García    | Auto     | SI         | NO      | 3500   |
-   | AD789GH  | Carlos López    | Camioneta| SI         | SI      | 0      |
-   | AE101IJ  | Ana Rodríguez   | Moto     | SI         | NO      | 0      |
-   | AF202KL  | Pablo Díaz      | Auto     | SI         | SI      | 0      |
-   | AD111EF  | Roberto Sánchez | Auto     | SI         | NO      | 2000   |
-   | AG222HH  | Laura Fernández | Auto     | SI         | NO      | 1500   |
-   | AI333JJ  | Diego Morales   | Auto     | SI         | NO      | 1000   |
-   
-   Sheet 3: "Movimientos"
-   | patente  | fecha      | hora     | tipo    | monto | operador      |
-   |----------|------------|----------|---------|-------|---------------|
-   | AA123BB  | 2026-05-08 | 10:42:28 | Entrada | 0     | Sistema       |
-   | AC456DF  | 2026-05-08 | 10:35:14 | Entrada | 0     | Sistema       |
-   | AD789GH  | 2026-05-08 | 10:28:05 | Entrada | 0     | Sistema       |
-   | AE101IJ  | 2026-05-08 | 10:20:11 | Salida  | 750   | Sistema       |
-   | AF202KL  | 2026-05-08 | 10:15:47 | Entrada | 0     | Sistema       |
-   
-   Sheet 4: "Estadisticas"
-   | fecha      | ingresos_dia | recaudacion_dia | ocupacion_max | hora_pico_inicio | hora_pico_fin |
-   |------------|--------------|-----------------|---------------|------------------|---------------|
-   | 2026-05-08 | 87           | 48750           | 25            | 17:00            | 19:00         |
-   | 2026-05-07 | 75           | 42000           | 22            | 17:00            | 19:00         |
+   API via GET (evita CORS):
+   ?action=dashboard                          → Datos completos
+   ?action=abrir_barrera&patente=XX&operador=YY → Entrada/Salida
+   ?action=cobrar_deuda&patente=XX            → Cobra deuda
+   ?action=consultar_vehiculo&patente=XX      → Info de vehículo
    
    ============================================ */
 
@@ -57,7 +25,7 @@ const SHEETS_CONFIG = {
 };
 
 // ============================================
-// MOCK DATA (Datos provisorios)
+// MOCK DATA (Datos provisorios / fallback)
 // ============================================
 
 const MOCK_DATA = {
@@ -78,8 +46,6 @@ const MOCK_DATA = {
         { patente: 'AD111EF', titular: 'Roberto Sánchez', tipo: 'Auto', habilitado: true, abonado: false, deuda: 2000 },
         { patente: 'AG222HH', titular: 'Laura Fernández', tipo: 'Auto', habilitado: true, abonado: false, deuda: 1500 },
         { patente: 'AI333JJ', titular: 'Diego Morales', tipo: 'Auto', habilitado: true, abonado: false, deuda: 1000 },
-        { patente: 'AK444LL', titular: 'Sofía Martínez', tipo: 'Auto', habilitado: false, abonado: false, deuda: 5000 },
-        { patente: 'AM555NN', titular: 'Lucas Romero', tipo: 'Auto', habilitado: true, abonado: true, deuda: 0 },
     ],
 
     movimientos: [
@@ -88,19 +54,13 @@ const MOCK_DATA = {
         { patente: 'AD789GH', fecha: '08/05/2026', hora: '10:28:05', tipo: 'Entrada', estado: 'Dentro', monto: 0 },
         { patente: 'AE101IJ', fecha: '08/05/2026', hora: '10:20:11', tipo: 'Salida', estado: 'Fuera', monto: 750 },
         { patente: 'AF202KL', fecha: '08/05/2026', hora: '10:15:47', tipo: 'Entrada', estado: 'Dentro', monto: 0 },
-        { patente: 'AM555NN', fecha: '08/05/2026', hora: '10:10:33', tipo: 'Entrada', estado: 'Dentro', monto: 0 },
-        { patente: 'AD111EF', fecha: '08/05/2026', hora: '10:05:19', tipo: 'Entrada', estado: 'Dentro', monto: 0 },
-        { patente: 'AG222HH', fecha: '08/05/2026', hora: '09:58:42', tipo: 'Entrada', estado: 'Dentro', monto: 0 },
-        { patente: 'AI333JJ', fecha: '08/05/2026', hora: '09:50:15', tipo: 'Entrada', estado: 'Dentro', monto: 0 },
     ],
 
-    // Vehículos que están ACTUALMENTE dentro del estacionamiento
     vehiculos_dentro: ['AA123BB', 'AC456DF', 'AD789GH', 'AF202KL', 'AM555NN', 'AD111EF', 'AG222HH', 'AI333JJ',
         'AB100CC', 'AB200DD', 'AB300EE', 'AB400FF', 'AB500GG', 'AB600HH', 'AB700II', 'AB800JJ',
         'AB900KK', 'AC100LL'
     ],
 
-    // Top vehículos por frecuencia de ingresos
     top_vehiculos: [
         { patente: 'AA123BB', ingresos: 35 },
         { patente: 'AC456DF', ingresos: 28 },
@@ -109,7 +69,6 @@ const MOCK_DATA = {
         { patente: 'AF202KL', ingresos: 19 },
     ],
 
-    // Estadísticas del día
     estadisticas_hoy: {
         ingresos_hoy: 87,
         recaudacion_hoy: 48750,
@@ -118,13 +77,11 @@ const MOCK_DATA = {
         hora_pico: '17:00 - 19:00',
     },
 
-    // Datos para gráfico de ocupación 24h
     ocupacion_24h: {
         labels: ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', '00:00', '02:00', '04:00', '06:00', '08:00', '10:00'],
         data: [12, 18, 22, 25, 28, 24, 20, 10, 5, 3, 2, 8, 15],
     },
 
-    // Deudores 
     deudores: [
         { patente: 'AC456DF', deuda: 3500, ultimo_ingreso: '05/05/2026' },
         { patente: 'AD111EF', deuda: 2000, ultimo_ingreso: '02/05/2026' },
@@ -146,56 +103,110 @@ class DataService {
     }
 
     /**
-     * Obtener todos los datos (ya sea de Sheets o mock)
+     * Obtener todos los datos del dashboard
      */
     async fetchAllData() {
         if (this.useSheets && this.sheetUrl) {
-            return await this._fetchFromSheets();
+            return await this._callSheets('dashboard');
         }
         return this._getMockData();
     }
 
     /**
-     * Fetch data from Google Sheets via Apps Script Web App
+     * Llamar al Apps Script via GET (evita CORS)
+     * Todas las acciones van como ?action=xxx&param1=val1&...
      */
-    async _fetchFromSheets() {
+    async _callSheets(action, params = {}) {
         try {
-            const response = await fetch(this.sheetUrl);
+            const url = new URL(this.sheetUrl);
+            url.searchParams.set('action', action);
+            Object.entries(params).forEach(([key, val]) => {
+                url.searchParams.set(key, val);
+            });
+
+            const response = await fetch(url.toString());
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
-            this.cache = data;
-            this.lastFetch = new Date();
+
+            if (action === 'dashboard') {
+                this.cache = data;
+                this.lastFetch = new Date();
+            }
+
             return data;
         } catch (error) {
-            console.error('Error fetching from Google Sheets:', error);
-            // Fallback a cache o mock
-            if (Object.keys(this.cache).length > 0) {
-                console.warn('Using cached data');
-                return this.cache;
+            console.error(`Error en _callSheets(${action}):`, error);
+
+            if (action === 'dashboard') {
+                if (Object.keys(this.cache).length > 0) {
+                    console.warn('Usando datos cacheados');
+                    return this.cache;
+                }
+                console.warn('Usando datos mock como fallback');
+                return this._getMockData();
             }
-            console.warn('Using mock data as fallback');
-            return this._getMockData();
+
+            return { success: false, message: 'Error de conexión: ' + error.message };
         }
     }
 
     /**
-     * Retornar datos mock procesados
+     * ABRIR BARRERA - El servidor decide Entrada/Salida y calcula monto
+     */
+    async abrirBarrera(patente, operador = 'Sistema') {
+        if (!this.useSheets || !this.sheetUrl) {
+            return { success: true, message: 'Simulado (modo mock)', tipo: 'Entrada', simulated: true };
+        }
+        return await this._callSheets('abrir_barrera', { patente, operador });
+    }
+
+    /**
+     * COBRAR DEUDA
+     */
+    async cobrarDeuda(patente) {
+        if (!this.useSheets || !this.sheetUrl) {
+            return { success: true, message: 'Deuda cobrada (simulado)', simulated: true };
+        }
+        return await this._callSheets('cobrar_deuda', { patente });
+    }
+
+    /**
+     * Buscar vehículo en cache/mock
+     */
+    buscarVehiculo(patente) {
+        const p = patente.replace(/\s/g, '').toUpperCase();
+        if (this.cache && this.cache.vehiculos) {
+            return this.cache.vehiculos.find(v => v.patente === p) || null;
+        }
+        return MOCK_DATA.vehiculos.find(v => v.patente === p) || null;
+    }
+
+    /**
+     * Verificar si un vehículo está dentro
+     */
+    estaDentro(patente) {
+        const p = patente.replace(/\s/g, '').toUpperCase();
+        if (this.cache && this.cache.vehiculos_dentro) {
+            return this.cache.vehiculos_dentro.includes(p);
+        }
+        return MOCK_DATA.vehiculos_dentro.includes(p);
+    }
+
+    /**
+     * Datos mock como fallback
      */
     _getMockData() {
         const totalPlaces = MOCK_DATA.configuracion.capacidad_total;
         const occupied = MOCK_DATA.vehiculos_dentro.length;
         const free = totalPlaces - occupied;
         const occupiedPercent = Math.round((occupied / totalPlaces) * 100);
-        const freePercent = 100 - occupiedPercent;
 
         return {
             configuracion: MOCK_DATA.configuracion,
             resumen: {
-                total: totalPlaces,
-                ocupados: occupied,
-                libres: free,
+                total: totalPlaces, ocupados: occupied, libres: free,
                 porcentaje_ocupado: occupiedPercent,
-                porcentaje_libre: freePercent,
+                porcentaje_libre: 100 - occupiedPercent,
                 recaudacion_hoy: MOCK_DATA.estadisticas_hoy.recaudacion_hoy,
             },
             movimientos: MOCK_DATA.movimientos,
@@ -204,99 +215,10 @@ class DataService {
             estadisticas: MOCK_DATA.estadisticas_hoy,
             ocupacion_24h: MOCK_DATA.ocupacion_24h,
             vehiculos: MOCK_DATA.vehiculos,
+            vehiculos_dentro: MOCK_DATA.vehiculos_dentro,
         };
-    }
-
-    /**
-     * Buscar vehículo por patente (usa cache o mock)
-     */
-    buscarVehiculo(patente) {
-        const patenteNorm = patente.replace(/\s/g, '').toUpperCase();
-        // Buscar en datos cacheados de Sheets primero
-        if (this.cache && this.cache.vehiculos) {
-            return this.cache.vehiculos.find(v => v.patente === patenteNorm) || null;
-        }
-        return MOCK_DATA.vehiculos.find(v => v.patente === patenteNorm) || null;
-    }
-
-    /**
-     * Verificar si un vehículo está dentro (usa datos de Sheets si disponible)
-     */
-    estaDentro(patente) {
-        const patenteNorm = patente.replace(/\s/g, '').toUpperCase();
-        // Si tenemos movimientos del cache, calcular estado real
-        if (this.cache && this.cache.movimientos) {
-            const movs = this.cache.movimientos.filter(m => m.patente === patenteNorm);
-            if (movs.length > 0) {
-                return movs[0].estado === 'Dentro';
-            }
-        }
-        return MOCK_DATA.vehiculos_dentro.includes(patenteNorm);
-    }
-
-    // ============================================
-    // ESCRITURA - POST a Google Sheets
-    // ============================================
-
-    /**
-     * Enviar datos al Sheet vía POST
-     */
-    async _postToSheets(action, data) {
-        if (!this.useSheets || !this.sheetUrl) {
-            console.warn('Sheets no configurado, operación simulada');
-            return { success: true, message: 'Operación simulada (modo mock)', simulated: true };
-        }
-
-        try {
-            const response = await fetch(this.sheetUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify({ action, data }),
-            });
-
-            // Apps Script redirects, so we follow it
-            const result = await response.json();
-            return result;
-        } catch (error) {
-            console.error(`Error en POST (${action}):`, error);
-            return { success: false, message: 'Error de conexión: ' + error.message };
-        }
-    }
-
-    /**
-     * Registrar movimiento (Entrada o Salida)
-     * @param {string} patente 
-     * @param {string} tipo - 'Entrada' o 'Salida'
-     * @param {number} monto - Monto cobrado (solo para Salida)
-     * @param {string} operador - Nombre del operador
-     */
-    async registrarMovimiento(patente, tipo, monto = 0, operador = 'Sistema') {
-        return await this._postToSheets('registrar_movimiento', {
-            patente,
-            tipo,
-            monto,
-            operador,
-        });
-    }
-
-    /**
-     * Actualizar deuda de un vehículo
-     */
-    async actualizarDeuda(patente, nuevaDeuda) {
-        return await this._postToSheets('actualizar_deuda', {
-            patente,
-            deuda: nuevaDeuda,
-        });
-    }
-
-    /**
-     * Registrar un vehículo nuevo
-     */
-    async registrarVehiculo(data) {
-        return await this._postToSheets('registrar_vehiculo', data);
     }
 }
 
 // Export global instance
 const dataService = new DataService();
-
