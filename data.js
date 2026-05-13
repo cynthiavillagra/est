@@ -20,7 +20,7 @@ const SHEETS_CONFIG = {
     // Backup de datos mock en: data_mock_backup.js
 
     USAR_SHEETS: true,
-    SHEET_URL: 'https://script.google.com/macros/s/AKfycbzsQxLNBJjwcomD5zWmfkIKT8ElwY9eJ6_jMGhXB5FoJBWuP0XLRm01G55lZymZfNW_7Q/exec',
+    SHEET_URL: 'https://script.google.com/macros/s/AKfycbzxwC6Ia8uvY6V2MbamFGyF0Shh7asnTuK6hu2jZVrLVV0vOHC0mnBT4ky7TOqVWfHi/exec',
     REFRESH_INTERVAL: 30000, // Refrescar cada 30 segundos
 };
 
