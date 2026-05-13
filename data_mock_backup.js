@@ -47,12 +47,16 @@
 // ============================================
 
 const SHEETS_CONFIG = {
-    // ✅ CONECTADO A GOOGLE SHEETS
-    // Si falla la conexión, cae automáticamente a MOCK_DATA como fallback
-    // Backup de datos mock en: data_mock_backup.js
+    // INSTRUCCIONES:
+    // 1. Crear un Google Sheet con las hojas descritas arriba
+    // 2. Ir a Extensiones > Apps Script
+    // 3. Pegar el código del archivo google_apps_script.js
+    // 4. Implementar como aplicación web (Implementar > Implementación nueva > App web)
+    // 5. Copiar la URL generada y pegarla aquí abajo
+    // 6. Configurar USAR_SHEETS = true
 
-    USAR_SHEETS: true,
-    SHEET_URL: 'https://script.google.com/macros/s/AKfycbzGr46CN_7-bCvpIca13QeWF8K6Eesa_BQYhk92AL_wal33TzrhpLU9VKPUJdgWj0EG8Q/exec',
+    USAR_SHEETS: false,  // Cambiar a true cuando se conecte Google Sheets
+    SHEET_URL: '',       // URL de la webapp de Apps Script
     REFRESH_INTERVAL: 30000, // Refrescar cada 30 segundos
 };
 
