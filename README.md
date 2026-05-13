@@ -211,7 +211,11 @@ CREATE TABLE usuarios (
 | Campos nuevos | — | `created_at`, `updated_at`, `ultimo_login` |
 | Permisos | Tabla en `auth.js` | Tabla `roles_permisos` (normalizable) |
 
-## �📌 Notas
+## 📌 Notas
 - La autenticación actual es **client-side** (mock data). Cuando se conecte la BBDD SQL, la validación se hará server-side.
 - Las contraseñas en el Excel/Sheet son provisorias. En la versión con BBDD se usará hashing seguro.
 - El sistema de permisos usa atributos HTML (`data-permission`, `data-role`) para ocultar/mostrar elementos según el rol del usuario logueado.
+
+## 🎬 Recursos
+- [¿Qué es el "ARMA DE CHEJOV"? | Con ejemplos de películas te lo explico](https://youtube.com/watch?v=9i7YoHTKxlk) — Cine Ojo Producciones
+
