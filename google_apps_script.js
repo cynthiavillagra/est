@@ -126,6 +126,130 @@ function doGet(e) {
 }
 
 // ============================================
+// doPost - ESCRITURA DE DATOS
+// ============================================
+// Recibe POST con JSON body:
+// { action: "registrar_movimiento", data: { patente, tipo, monto, operador } }
+// { action: "actualizar_deuda", data: { patente, deuda } }
+
+function doPost(e) {
+    try {
+        const body = JSON.parse(e.postData.contents);
+        const action = body.action;
+        const data = body.data;
+
+        let resultado = { success: false, message: 'Acción no reconocida' };
+
+        switch (action) {
+            case 'registrar_movimiento':
+                resultado = registrarMovimiento(data);
+                break;
+            case 'actualizar_deuda':
+                resultado = actualizarDeuda(data);
+                break;
+            case 'registrar_vehiculo':
+                resultado = registrarVehiculo(data);
+                break;
+        }
+
+        return ContentService
+            .createTextOutput(JSON.stringify(resultado))
+            .setMimeType(ContentService.MimeType.JSON);
+
+    } catch (error) {
+        return ContentService
+            .createTextOutput(JSON.stringify({ success: false, error: error.message }))
+            .setMimeType(ContentService.MimeType.JSON);
+    }
+}
+
+/**
+ * Registrar un movimiento (Entrada o Salida) en la hoja Movimientos
+ */
+function registrarMovimiento(data) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Movimientos');
+    if (!sheet) return { success: false, message: 'Hoja Movimientos no encontrada' };
+
+    const now = new Date();
+    const fecha = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    const hora = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm:ss');
+
+    const patente = (data.patente || '').toUpperCase().replace(/\s/g, '');
+    const tipo = data.tipo || 'Entrada';         // Entrada o Salida
+    const monto = parseFloat(data.monto) || 0;
+    const operador = data.operador || 'Sistema';
+    const observaciones = data.observaciones || '';
+
+    // Agregar fila al final
+    sheet.appendRow([patente, fecha, hora, tipo, monto, operador, observaciones]);
+
+    return {
+        success: true,
+        message: `${tipo} registrada: ${patente} a las ${hora}`,
+        data: { patente, fecha, hora, tipo, monto, operador }
+    };
+}
+
+/**
+ * Actualizar la deuda de un vehículo en la hoja Vehiculos
+ */
+function actualizarDeuda(data) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Vehiculos');
+    if (!sheet) return { success: false, message: 'Hoja Vehiculos no encontrada' };
+
+    const patente = (data.patente || '').toUpperCase().replace(/\s/g, '');
+    const nuevaDeuda = parseFloat(data.deuda) || 0;
+
+    const valores = sheet.getDataRange().getValues();
+    const headers = valores[0].map(h => h.toString().toLowerCase().replace(/\s+/g, '_'));
+    const colPatente = headers.indexOf('patente');
+    const colDeuda = headers.indexOf('deuda');
+
+    if (colPatente === -1 || colDeuda === -1) {
+        return { success: false, message: 'Columnas patente/deuda no encontradas' };
+    }
+
+    for (let i = 1; i < valores.length; i++) {
+        if (valores[i][colPatente].toString().toUpperCase() === patente) {
+            sheet.getRange(i + 1, colDeuda + 1).setValue(nuevaDeuda);
+            return { success: true, message: `Deuda de ${patente} actualizada a $${nuevaDeuda}` };
+        }
+    }
+
+    return { success: false, message: `Vehículo ${patente} no encontrado` };
+}
+
+/**
+ * Registrar un nuevo vehículo en la hoja Vehiculos
+ */
+function registrarVehiculo(data) {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName('Vehiculos');
+    if (!sheet) return { success: false, message: 'Hoja Vehiculos no encontrada' };
+
+    const patente = (data.patente || '').toUpperCase().replace(/\s/g, '');
+    const titular = data.titular || 'Sin identificar';
+    const tipo = data.tipo || 'Auto';
+    const habilitado = data.habilitado || 'SI';
+    const abonado = data.abonado || 'NO';
+    const deuda = parseFloat(data.deuda) || 0;
+
+    // Verificar si ya existe
+    const valores = sheet.getDataRange().getValues();
+    for (let i = 1; i < valores.length; i++) {
+        if (valores[i][0].toString().toUpperCase() === patente) {
+            return { success: false, message: `Vehículo ${patente} ya existe` };
+        }
+    }
+
+    sheet.appendRow([patente, titular, tipo, habilitado, abonado, deuda, '', '', Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd')]);
+
+    return { success: true, message: `Vehículo ${patente} registrado` };
+}
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 

@@ -208,21 +208,95 @@ class DataService {
     }
 
     /**
-     * Buscar vehículo por patente
+     * Buscar vehículo por patente (usa cache o mock)
      */
     buscarVehiculo(patente) {
         const patenteNorm = patente.replace(/\s/g, '').toUpperCase();
+        // Buscar en datos cacheados de Sheets primero
+        if (this.cache && this.cache.vehiculos) {
+            return this.cache.vehiculos.find(v => v.patente === patenteNorm) || null;
+        }
         return MOCK_DATA.vehiculos.find(v => v.patente === patenteNorm) || null;
     }
 
     /**
-     * Verificar si un vehículo está dentro
+     * Verificar si un vehículo está dentro (usa datos de Sheets si disponible)
      */
     estaDentro(patente) {
         const patenteNorm = patente.replace(/\s/g, '').toUpperCase();
+        // Si tenemos movimientos del cache, calcular estado real
+        if (this.cache && this.cache.movimientos) {
+            const movs = this.cache.movimientos.filter(m => m.patente === patenteNorm);
+            if (movs.length > 0) {
+                return movs[0].estado === 'Dentro';
+            }
+        }
         return MOCK_DATA.vehiculos_dentro.includes(patenteNorm);
+    }
+
+    // ============================================
+    // ESCRITURA - POST a Google Sheets
+    // ============================================
+
+    /**
+     * Enviar datos al Sheet vía POST
+     */
+    async _postToSheets(action, data) {
+        if (!this.useSheets || !this.sheetUrl) {
+            console.warn('Sheets no configurado, operación simulada');
+            return { success: true, message: 'Operación simulada (modo mock)', simulated: true };
+        }
+
+        try {
+            const response = await fetch(this.sheetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action, data }),
+            });
+
+            // Apps Script redirects, so we follow it
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error(`Error en POST (${action}):`, error);
+            return { success: false, message: 'Error de conexión: ' + error.message };
+        }
+    }
+
+    /**
+     * Registrar movimiento (Entrada o Salida)
+     * @param {string} patente 
+     * @param {string} tipo - 'Entrada' o 'Salida'
+     * @param {number} monto - Monto cobrado (solo para Salida)
+     * @param {string} operador - Nombre del operador
+     */
+    async registrarMovimiento(patente, tipo, monto = 0, operador = 'Sistema') {
+        return await this._postToSheets('registrar_movimiento', {
+            patente,
+            tipo,
+            monto,
+            operador,
+        });
+    }
+
+    /**
+     * Actualizar deuda de un vehículo
+     */
+    async actualizarDeuda(patente, nuevaDeuda) {
+        return await this._postToSheets('actualizar_deuda', {
+            patente,
+            deuda: nuevaDeuda,
+        });
+    }
+
+    /**
+     * Registrar un vehículo nuevo
+     */
+    async registrarVehiculo(data) {
+        return await this._postToSheets('registrar_vehiculo', data);
     }
 }
 
 // Export global instance
 const dataService = new DataService();
+

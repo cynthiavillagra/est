@@ -179,14 +179,51 @@ function toggleSidebar(open) {
 // ============================================
 
 function initEventListeners() {
-    // Barrier button (with permission check)
-    document.getElementById('btnBarrier')?.addEventListener('click', () => {
+    // Barrier button (with permission check + write to Sheet)
+    document.getElementById('btnBarrier')?.addEventListener('click', async () => {
         if (!AuthService.hasPermission('abrir_barrera')) {
             showToast('error', 'No tenés permisos para abrir la barrera');
             return;
         }
-        showToast('success', 'Barrera abierta correctamente');
-        animateBarrierButton();
+
+        const patente = document.getElementById('detectedPlate')?.textContent?.replace(/\s/g, '') || '';
+        if (!patente || patente === '---') {
+            showToast('error', 'No hay patente detectada');
+            return;
+        }
+
+        // Determinar si es Entrada o Salida
+        const estaDentro = dataService.estaDentro(patente);
+        const tipo = estaDentro ? 'Salida' : 'Entrada';
+        const operador = AuthService.getUserName();
+
+        // Deshabilitar botón mientras procesa
+        const btn = document.getElementById('btnBarrier');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> REGISTRANDO...';
+
+        try {
+            const result = await dataService.registrarMovimiento(patente, tipo, 0, operador);
+
+            if (result.success) {
+                showToast('success', `✅ ${tipo} registrada: ${patente}`);
+                animateBarrierButton(tipo);
+
+                // Refrescar datos del dashboard
+                setTimeout(async () => {
+                    await loadDashboard();
+                }, 1500);
+            } else {
+                showToast('error', result.message || 'Error al registrar movimiento');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-dungeon"></i> ABRIR BARRERA';
+            }
+        } catch (error) {
+            console.error('Error en barrera:', error);
+            showToast('error', 'Error de conexión al registrar');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-dungeon"></i> ABRIR BARRERA';
+        }
     });
 
     // History button
@@ -234,18 +271,23 @@ function initEventListeners() {
     });
 }
 
-function animateBarrierButton() {
+function animateBarrierButton(tipo = 'Entrada') {
     const btn = document.getElementById('btnBarrier');
     if (!btn) return;
 
+    const isEntry = tipo === 'Entrada';
     btn.style.transform = 'scale(0.95)';
-    btn.innerHTML = '<i class="fas fa-check-circle"></i> BARRERA ABIERTA';
-    btn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+    btn.innerHTML = `<i class="fas ${isEntry ? 'fa-arrow-down' : 'fa-arrow-up'}"></i> ${tipo.toUpperCase()} REGISTRADA`;
+    btn.style.background = isEntry
+        ? 'linear-gradient(135deg, #16a34a, #15803d)'
+        : 'linear-gradient(135deg, #f59e0b, #d97706)';
+    btn.disabled = true;
 
     setTimeout(() => {
         btn.style.transform = '';
         btn.innerHTML = '<i class="fas fa-dungeon"></i> ABRIR BARRERA';
         btn.style.background = '';
+        btn.disabled = false;
     }, 3000);
 }
 
